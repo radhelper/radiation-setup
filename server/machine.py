@@ -14,6 +14,7 @@ from .command_factory import CommandFactory
 from .dut_logging import DUTLogging, EndStatus
 from .error_codes import ErrorCodes
 from .reboot_machine import reboot_machine, turn_machine_on
+from .machine_events import MachineEvents
 
 
 class Machine(threading.Thread):
@@ -103,6 +104,12 @@ class Machine(threading.Thread):
         self.__soft_os_reboot_count = 0
         self.__hard_reboot_count = 0
 
+        #
+        self.machine_events = MachineEvents(
+            machine = self,
+            logger = self.__logger,
+        )
+
         super(Machine, self).__init__(*args, **kwargs)
 
     def __str__(self) -> str:
@@ -122,6 +129,7 @@ class Machine(threading.Thread):
         # Wait and start the app for the first time
         self.__wait_for_booting()
         self.__soft_app_reboot()
+        self.machine_events.start_benchmark()
         while self.__stop_event.is_set() is False:
             try:
                 data, address = self.__messages_socket.recvfrom(self.__DATA_SIZE)
@@ -141,6 +149,8 @@ class Machine(threading.Thread):
                     self.__soft_app_reboot_count = 0
                     self.__hard_reboot_count = 0
 
+                self.machine_events.handle_event(connection_type_str, data_decoded)
+
                 self.__logger.debug(f"{connection_type_str} - Connection from {self}")
 
                 if self.__command_factory.is_command_window_timed_out:
@@ -148,7 +158,9 @@ class Machine(threading.Thread):
                         f"Benchmark exceeded the command execution window, executing another one now on {self}.")
                     self.__soft_app_reboot(previous_log_end_status=EndStatus.NORMAL_END)
             except (TimeoutError, socket.timeout):
+                self.machine_events.end_run()
                 # Soft app reboot
+                self.machine_events.soft_reboot()
                 soft_app_reboot_status = self.__soft_app_reboot(previous_log_end_status=EndStatus.SOFT_APP_REBOOT)
                 if soft_app_reboot_status == ErrorCodes.SUCCESS:
                     continue
@@ -157,7 +169,9 @@ class Machine(threading.Thread):
                 if soft_os_reboot == ErrorCodes.SUCCESS:
                     self.__soft_app_reboot(previous_log_end_status=EndStatus.SOFT_OS_REBOOT)
                     continue
+
                 # Finally, the Power cycle Hard reboot
+                self.machine_events.hard_reboot()
                 self.__hard_reboot()
                 self.__soft_app_reboot(previous_log_end_status=EndStatus.HARD_REBOOT)
 
