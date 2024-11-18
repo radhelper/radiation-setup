@@ -7,6 +7,7 @@ from .machine_summary import (
 	ActiveMachineSummary,
 	RebootingMachineSummary,
 	SleepingMachineSummary,
+	UnknownMachineSummary,
 )
 
 from .utils import (
@@ -114,7 +115,7 @@ class MachineEvents:
 		if sdc_time is None:
 			sdc_time = time.time()
 
-		self.run_sdcs += 1
+		self.run_sdcs += sdc_count
 		self.log(log_time=sdc_time)
 
 	def iteration(self, info_entry, info_time=None):
@@ -190,7 +191,9 @@ class MachineEvents:
 		elif event_type == "#ABORT":
 			self.due()
 		elif event_type == "#LOGFILE":
-			pass
+			self.log()
+		elif event_type == "#START":
+			self.log()
 		else:
 			raise ValueError(f"Invalid event type: {event_type}")
 
@@ -246,6 +249,7 @@ class MachineEvents:
 				iterations_per_sec,
 				self.benchmark_sdcs,
 				self.run_sdcs,
+				self.last_log_time,
 			)
 		elif status == MachineStatus.REBOOTING:
 			last_reboot_attempt = safe_max(self.last_hard_reboot_time, self.last_soft_reboot_time)
@@ -269,6 +273,9 @@ class MachineEvents:
 				next_reboot,
 			)
 		else:
-			summary = None
+			summary = UnknownMachineSummary(
+				self.machine,
+				self.benchmark,
+			)
 
 		return summary
