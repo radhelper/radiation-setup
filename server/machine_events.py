@@ -1,14 +1,26 @@
 import time
-from typing import Optional
-from dataclasses import dataclass
 from .machine_status import MachineStatus
 from .line_parser import (
 	parse_it_line,
 )
+from .machine_summary import (
+	ActiveMachineSummary,
+	RebootingMachineSummary,
+	SleepingMachineSummary,
+)
+
+from .utils import (
+	safe_max,
+)
 
 timestamp = int
 
-class MachineEvents():
+# TO-DO
+# file with constants
+MAX_CONSECUTIVE_HARD_REBOOTS = 6
+SLEEP_TIME_AFTER_FAILED_REBOOTS = 30 * 60
+
+class MachineEvents:
 	def __init__(
 		self,
 		machine,
@@ -155,6 +167,13 @@ class MachineEvents():
 		self.end_run(end_time=due_time)
 
 	def handle_event(self, event_type, event_message=None):
+		try:
+			self._handle_event(event_type, event_message)
+		except ValueError as e:
+			if self.logger is not None:
+				self.logger.info(f"MachineEvents for {self.machine_name} could not parse event of type {event_type}.")
+
+	def _handle_event(self, event_type, event_message=None):
 		if event_type == '#IT':
 			line_values = parse_it_line(event_message)
 			self.iteration(line_values)
@@ -170,21 +189,86 @@ class MachineEvents():
 			self.sdc()
 		elif event_type == "#ABORT":
 			self.due()
+		elif event_type == "#LOGFILE":
+			pass
 		else:
 			raise ValueError(f"Invalid event type: {event_type}")
 
 	@property
 	def consecutive_soft_reboots(self):
-		return self.machine.__soft_app_reboot_count
+		return self.machine.soft_app_reboot_count
 
 	@property
 	def consecutive_hard_reboots(self):
-		return self.machine.__hard_reboot_count
+		return self.machine.hard_reboot_count
 
 	@property
 	def machine_name(self):
-		return self.machine.__dut_hostname
+		return self.machine.machine_name
 
 	@property
 	def machine_info(self):
 		return str(self.machine)
+
+	@property
+	def benchmark(self):
+		return self.machine_name
+
+	def create_summary(self):
+		status = MachineStatus.UNKNOWN
+
+		if self.run_start is not None:
+			status = MachineStatus.ACTIVE
+		elif self.consecutive_hard_reboots < MAX_CONSECUTIVE_HARD_REBOOTS and self.consecutive_soft_reboots > 0:
+			status = MachineStatus.REBOOTING
+		elif self.consecutive_hard_reboots == MAX_CONSECUTIVE_HARD_REBOOTS:
+			status = MachineStatus.SLEEPING
+
+		if status == MachineStatus.ACTIVE:
+			benchmark_duration = time.time() - self.benchmark_start
+			if benchmark_duration > 0:
+				logs_per_sec = self.benchmark_logs / benchmark_duration
+			else:
+				logs_per_sec = 0
+
+			run_duration = time.time() - self.run_start
+
+			if run_duration > 0:
+				iterations_per_sec = self.run_iterations / run_duration
+			else:
+				iterations_per_sec = 0
+
+			summary = ActiveMachineSummary(
+				self.machine,
+				self.benchmark,
+				self.benchmark_start,
+				logs_per_sec,
+				iterations_per_sec,
+				self.benchmark_sdcs,
+				self.run_sdcs,
+			)
+		elif status == MachineStatus.REBOOTING:
+			last_reboot_attempt = safe_max(self.last_hard_reboot_time, self.last_soft_reboot_time)
+			reboot_attempts = safe_max(self.consecutive_soft_reboots, self.consecutive_hard_reboots)
+			summary = RebootingMachineSummary(
+				self.machine,
+				self.benchmark,
+				reboot_attempts,
+				self.last_run_end, #last_active
+				last_reboot_attempt,
+				MAX_CONSECUTIVE_HARD_REBOOTS,
+			)
+		elif status == MachineStatus.SLEEPING:
+			last_reboot_attempt = safe_max(self.last_hard_reboot_time, self.last_soft_reboot_time)
+			next_reboot = last_reboot_attempt + SLEEP_TIME_AFTER_FAILED_REBOOTS
+			summary = SleepingMachineSummary(
+				self.machine,
+				self.benchmark,
+				self.last_run_end, #last_active
+				last_reboot_attempt,
+				next_reboot,
+			)
+		else:
+			summary = None
+
+		return summary
