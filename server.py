@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 import argparse
 import errno
 import logging
@@ -14,6 +14,8 @@ import yaml
 from server.logger_formatter import logging_setup
 from server.machine import Machine
 from server.print_manager import ConsoleCursesManager
+
+from server.server_status import ServerStatus
 
 # Logger name in the main server thread
 PARENT_LOGGER_NAME: str = os.path.basename(str(__file__).lower().replace(".py", ""))
@@ -112,6 +114,8 @@ def main():
     # set the exception hook
     threading.excepthook = __machine_thread_exception_handler
 
+    test_ui = True
+
     try:
         # Start the server threads
         for m in server_parameters["machines"]:
@@ -122,6 +126,10 @@ def main():
                 logger.info(f"Starting a new thread to listen at {machine}")
                 machine.start()
                 MACHINE_LIST.append(machine)
+
+        if test_ui:
+            server_status = ServerStatus(MACHINE_LIST, logger=logger)
+            server_status.start()
     except Exception as err:
         logger.exception(f"General exception:{err}")
         __end_daemon_machines()
