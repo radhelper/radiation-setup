@@ -125,6 +125,9 @@ class Machine(threading.Thread):
     def hard_reboot_count(self):
         return self.__hard_reboot_count
 
+    @property
+    def current_benchmark(self):
+        return self.__command_factory.current_command["codename"]
 
     def __str__(self) -> str:
         dut_str = f"IP:{self.__dut_ip} USERNAME:{self.__dut_username} "

@@ -212,7 +212,7 @@ class MachineEvents:
 
 	@property
 	def benchmark(self):
-		return self.machine_name
+		return self.machine.current_benchmark
 
 	def create_summary(self):
 		status = MachineStatus.UNKNOWN

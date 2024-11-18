@@ -36,6 +36,10 @@ class CommandFactory:
             self.__cmd_queue = collections.deque(self.__json_data_list)
 
     @property
+    def current_command(self):
+        return self.__current_command
+
+    @property
     def is_command_window_timed_out(self):
         """ Only checks if the self.__current_command is outside execute window
         :return:
