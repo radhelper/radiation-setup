@@ -192,7 +192,7 @@ class MachineEvents:
 			self.due()
 		elif event_type == "#LOGFILE":
 			self.log()
-		elif event_type == "#START":
+		elif event_type == "#BEGIN":
 			self.log()
 		else:
 			raise ValueError(f"Invalid event type: {event_type}")
@@ -222,7 +222,8 @@ class MachineEvents:
 
 		if self.run_start is not None:
 			status = MachineStatus.ACTIVE
-		elif self.consecutive_hard_reboots < MAX_CONSECUTIVE_HARD_REBOOTS and self.consecutive_soft_reboots > 0:
+		#elif self.consecutive_hard_reboots < MAX_CONSECUTIVE_HARD_REBOOTS and self.consecutive_soft_reboots > 0:
+		elif self.machine.soft_rebooting:
 			status = MachineStatus.REBOOTING
 		elif self.consecutive_hard_reboots == MAX_CONSECUTIVE_HARD_REBOOTS:
 			status = MachineStatus.SLEEPING
