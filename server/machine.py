@@ -48,7 +48,7 @@ class Machine(threading.Thread):
 
     # Possible connection string
     __ALL_POSSIBLE_CONNECTION_TYPES = [  # Add more if necessary
-        '#IT', '#HEADER', '#BEGIN', '#END', '#INF', '#ERR', "#SDC", "#ABORT"
+        '#IT', '#HEADER', '#BEGIN', '#END', '#INF', '#ERR', "#SDC", "#ABORT", "#LOGFILE"
     ]
 
     def __init__(self, configuration_file: str, server_ip: str, logger_name: str, server_log_path: str,
@@ -112,6 +112,8 @@ class Machine(threading.Thread):
 
         self.machine_name = self.__dut_hostname
 
+        self.soft_rebooting = False
+
         super(Machine, self).__init__(*args, **kwargs)
 
     def create_summary(self):
@@ -146,6 +148,7 @@ class Machine(threading.Thread):
         # Wait and start the app for the first time
         self.__wait_for_booting()
         self.__soft_app_reboot()
+        self.soft_rebooting = False
         self.machine_events.start_benchmark()
         while self.__stop_event.is_set() is False:
             try:
@@ -176,23 +179,27 @@ class Machine(threading.Thread):
                     self.__logger.info(
                         f"Benchmark exceeded the command execution window, executing another one now on {self}.")
                     self.__soft_app_reboot(previous_log_end_status=EndStatus.NORMAL_END)
+                    self.soft_rebooting = False
             except (TimeoutError, socket.timeout):
                 self.machine_events.end_run()
                 # Soft app reboot
                 self.machine_events.soft_reboot()
                 soft_app_reboot_status = self.__soft_app_reboot(previous_log_end_status=EndStatus.SOFT_APP_REBOOT)
+                self.soft_rebooting = False
                 if soft_app_reboot_status == ErrorCodes.SUCCESS:
                     continue
                 # Soft OS reboot
                 soft_os_reboot = self.__soft_os_reboot()
                 if soft_os_reboot == ErrorCodes.SUCCESS:
                     self.__soft_app_reboot(previous_log_end_status=EndStatus.SOFT_OS_REBOOT)
+                    self.soft_rebooting = False
                     continue
 
                 # Finally, the Power cycle Hard reboot
                 self.machine_events.hard_reboot()
                 self.__hard_reboot()
                 self.__soft_app_reboot(previous_log_end_status=EndStatus.HARD_REBOOT)
+                self.soft_rebooting = False
 
     def __telnet_login(self) -> telnetlib.Telnet:
         """ Return a telnet session
@@ -235,6 +242,8 @@ class Machine(threading.Thread):
 
         # First check if there is an app running
         self.__logger.info(f"TRYING SOFT APP REBOOT (app kill and run again/start first time) on {self}")
+
+        self.soft_rebooting = True
 
         # self.__command_factory produces the commands that will be executed
         # The commands are already encoded
