@@ -26,13 +26,21 @@ def deduce_type(value):
 	# we do not know what it is, return the string
 	return value
 
+def prepare_log_line(text, line_type):
+	text = text.replace(f"{line_type}", "")
+	text = text.replace('\n', "")
+	text = text.strip()
+
+	return text
+
 def parse_it_line(text):
 	assert text.startswith('#IT')
 	line_format = "{iter:d} KerTime:{ker_time:f} AccTime:{acc_time:f}"
+	text = prepare_log_line(text, "#IT")
 	vals = parse.parse(line_format, text)
 
 	return {
-		'iteration': vals['iter'],
+		'iterations': vals['iter'],
 		'kernel_time': vals['ker_time'],
 		'accumulated_time': vals['acc_time'],
 	}
