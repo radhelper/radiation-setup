@@ -110,7 +110,21 @@ class Machine(threading.Thread):
             logger = self.__logger,
         )
 
+        self.machine_name = self.__dut_hostname
+
         super(Machine, self).__init__(*args, **kwargs)
+
+    def create_summary(self):
+        return self.machine_events.create_summary()
+
+    @property
+    def soft_app_reboot_count(self):
+        return self.__soft_app_reboot_count
+
+    @property
+    def hard_reboot_count(self):
+        return self.__hard_reboot_count
+
 
     def __str__(self) -> str:
         dut_str = f"IP:{self.__dut_ip} USERNAME:{self.__dut_username} "
@@ -142,14 +156,16 @@ class Machine(threading.Thread):
                         connection_type_str = substring
                         break
 
+                self.machine_events.handle_event(connection_type_str, data_decoded)
+
                 # TO AVOID making sequential reboot when receiving good data,
                 # This is necessary to fix the behavior when a device keeps crashing for multiple times
                 # in a short period, but eventually comes to life again
                 if connection_type_str == "#IT":
                     self.__soft_app_reboot_count = 0
                     self.__hard_reboot_count = 0
-
-                self.machine_events.handle_event(connection_type_str, data_decoded)
+                    summary = self.machine_events.create_summary()
+                    self.__logger.debug(summary)
 
                 self.__logger.debug(f"{connection_type_str} - Connection from {self}")
 
