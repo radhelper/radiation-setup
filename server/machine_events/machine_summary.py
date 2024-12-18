@@ -1,13 +1,13 @@
 import typing
 
-from abc import ABC, abstractmethod
+from abc import ABC
 
 from dataclasses import (
 	dataclass,
 	KW_ONLY,
 )
 
-from .machine_status import (
+from server.machine_events.machine_status import (
 	MachineStatus,
 )
 
@@ -33,6 +33,20 @@ class UnknownMachineSummary(BaseMachineSummary):
 	def __str__(self):
 		return f"The status of machine {self.machine.machine_name} is currently unknown, but it is expected to run benchmark {self.benchmark}.\n" + \
 		"An unknown status might mean it is just starting, or something else."
+
+	def __repr__(self):
+		return str(self)
+
+@dataclass
+class BootingMachineSummary(BaseMachineSummary):
+	machine: typing.Any
+	benchmark: str
+	_: KW_ONLY
+	status: MachineStatus = MachineStatus.BOOTING
+
+	def __str__(self):
+		return f"Machine {self.machine.machine_name} is currently booting, and it is expected to run benchmark {self.benchmark}.\n" + \
+		"."
 
 	def __repr__(self):
 		return str(self)

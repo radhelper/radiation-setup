@@ -1,16 +1,16 @@
 import time
-from .machine_status import MachineStatus
-from .line_parser import (
+from server.machine_events.machine_status import MachineStatus
+from server.machine_events.line_parser import (
 	parse_it_line,
 )
-from .machine_summary import (
+from server.machine_events.machine_summary import (
 	ActiveMachineSummary,
 	RebootingMachineSummary,
 	SleepingMachineSummary,
 	UnknownMachineSummary,
 )
 
-from .utils import (
+from server.utils import (
 	safe_max,
 )
 

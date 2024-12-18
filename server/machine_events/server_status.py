@@ -2,7 +2,7 @@
 
 import threading
 
-from .utils import (
+from server.utils import (
 	wait_time,
 	EmptyLogger,
 )

@@ -114,6 +114,8 @@ class Machine(threading.Thread):
 
         self.soft_rebooting = False
 
+        self.first_boot = False
+
         super(Machine, self).__init__(*args, **kwargs)
 
     def create_summary(self):
@@ -146,7 +148,9 @@ class Machine(threading.Thread):
             self.__logger.error(f"Failed to turn ON the {self}")
 
         # Wait and start the app for the first time
+        self.first_boot = True
         self.__wait_for_booting()
+        self.first_boot = False
         self.__soft_app_reboot()
         self.soft_rebooting = False
         self.machine_events.start_benchmark()

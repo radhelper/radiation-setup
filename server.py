@@ -15,7 +15,7 @@ from server.logger_formatter import logging_setup
 from server.machine import Machine
 from server.print_manager import ConsoleCursesManager
 
-from server.server_status import ServerStatus
+from server.machine_events import ServerStatus
 
 # Logger name in the main server thread
 PARENT_LOGGER_NAME: str = os.path.basename(str(__file__).lower().replace(".py", ""))
