@@ -5,13 +5,13 @@
 `radiation-setup` is the Python server component of the RADHelper framework.  
 It acts as a main coordinator for radiation experiments by receiving log and control messages from remote clients (machines under test) and orchestrating experiment execution.
 
-This server runs outside of the beam room and communicates with devices through a network.
+This server runs outside the beam room and communicates with devices through a network.
 
 ---
 
 ## 🚀 Features
 
-- Multi-machine TCP listener server
+- Multi-machine UDP listener server
 - Saves received data in organized files with timestamps and addresses
 - Configurable experiment parameters through YAML files
 - Integrates with [libLogHelper](https://github.com/radhelper/libLogHelper) on the client side
