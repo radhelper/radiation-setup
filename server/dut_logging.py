@@ -78,7 +78,7 @@ class DUTLogging:
                 message_content += "\n" if "\n" not in message_content else ""
                 # add timestamp
                 timestamp = datetime.now().isoformat(sep=' ', timespec='milliseconds')
-                message_content = f"{timestamp}" + message_content
+                message_content = f"{timestamp} {message_content}"
                 log_file.write(message_content)
         else:
             self.__logger.exception("[ERROR in __call__(message) Unable to open file]")
