@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<body>
+    <div>
+        <a href="{{ url_for('index') }}">Server Status</a>
+        Active Machines: {{ server.active_machine_count }}
+        Rebooting Machines: {{ server.rebooting_machine_count }}
+        Sleeping Machines: {{ server.sleeping_machine_count }}
+    </div>
+
+    {% for machine in machines %}
+    <div>
+        <p>
+            <a href="{{ url_for(machine.url) }}">{{ machine.name }}</a>: {{ machine.status }}
+        </p>
+    </div>
+    {% endfor %}
+</body>
+</html>
