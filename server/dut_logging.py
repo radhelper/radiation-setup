@@ -71,7 +71,11 @@ class DUTLogging:
         ecc_values = {0xD: "OFF", 0xE: "ON"}
         ecc_status = ecc_values[message[0]]
         self.__create_file_if_does_not_exist(ecc_status=ecc_status)
-        message_content = message[1:].decode("ascii")
+        try:
+            message_content = message[1:].decode("ascii")
+        except UnicodeDecodeError as exception_error:
+            self.__logger.exception("[ERROR in __call__(message) Unable to decode message]")
+            raise exception_error
 
         if self.__filename:
             with open(self.__filename, "a") as log_file:
