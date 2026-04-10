@@ -74,8 +74,7 @@ class DUTLogging:
         try:
             message_content = message[1:].decode("ascii")
         except UnicodeDecodeError as exception_error:
-            self.__logger.exception("[ERROR in __call__(message) Unable to decode message]")
-            raise exception_error
+            message_content = "".join(chr(chi) for chi in message[1:])
 
         if self.__filename:
             with open(self.__filename, "a") as log_file:

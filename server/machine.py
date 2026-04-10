@@ -28,13 +28,19 @@ class PossibleMessages(enum.Enum):
     SDC = "#SDC"
     ABORT = "#ABORT"
     POWER_CYCLE_REQUEST = "#INF POWER_CYCLE_REQUEST"
+    UNKNOWN = "UNKNOWN CONNECTION"
 
     @classmethod
-    def get_message_type(cls, log_string: str) -> str:
+    def get_message_type(cls, log_string: str) -> enum.Enum:
         for m in cls:
             if m.value in log_string:
-                return m.name
-        return "UnknownConn:" + log_string[:10]
+                if m.POWER_CYCLE_REQUEST.value in log_string:
+                    return m.POWER_CYCLE_REQUEST
+                return m
+        return cls.UNKNOWN
+
+    def __str__(self):
+        return str(self.value)
 
 
 class Machine(threading.Thread):
@@ -142,23 +148,27 @@ class Machine(threading.Thread):
             try:
                 data, address = self.__messages_socket.recvfrom(self.__DATA_SIZE)
                 self.__dut_logging_obj(message=data)
-                data_decoded = data.decode("ascii")[1:]
-                connection_type_str = PossibleMessages.get_message_type(log_string=data_decoded)
+                try:
+                    data_decoded = data.decode("ascii")[1:]
+                except UnicodeDecodeError:
+                    data_decoded = "".join(chr(chi) for chi in data[1:])
+
+                connection_type = PossibleMessages.get_message_type(log_string=data_decoded)
 
                 # TO AVOID making sequential reboot when receiving good data,
                 # This is necessary to fix the behavior when a device keeps crashing for multiple times
                 # in a short period, but eventually comes to life again
-                if connection_type_str == PossibleMessages.IT:
+                if connection_type == PossibleMessages.IT:
                     self.__soft_app_reboot_count = 0
                     self.__hard_reboot_count = 0
 
                 # We need to power cycle the DUT if it requests to do so
-                if connection_type_str == PossibleMessages.POWER_CYCLE_REQUEST:
+                if connection_type == PossibleMessages.POWER_CYCLE_REQUEST:
                     self.__logger.info(f"Power Cycle Request received from {self}")
                     self.__hard_reboot()
                     self.__soft_app_reboot(previous_log_end_status=EndStatus.HARD_REBOOT)
 
-                self.__logger.debug(f"{connection_type_str} - Connection from {self}")
+                self.__logger.debug(f"{connection_type} - Connection from {self}")
 
                 if self.__command_factory.is_command_window_timed_out:
                     self.__logger.info(
