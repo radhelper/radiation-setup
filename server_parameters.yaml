@@ -16,10 +16,15 @@ server_log_store_dir: logs/
 machines: [
   # The server will check this machine
   {
-    "enabled": True, "cfg_file": "machines_cfgs/carolk401.yaml"
+    "enabled": True, "cfg_file": "machines_cfgs/2026_05_rasp4coral_pedro_1.yaml"
   },
-  # The server will not check this machine
   {
-    "enabled": False, "cfg_file": "machines_cfgs/p20001.yaml"
+    "enabled": False, "cfg_file": "machines_cfgs/2026_05_rasp4coral_pedro_2.yaml"
+  },
+  {
+    "enabled": False, "cfg_file": "machines_cfgs/2026_05_rasp4coral_pedro_3.yaml"
+  },
+  {
+    "enabled": False, "cfg_file": "machines_cfgs/2026_05_rasp4coral_pedro_4.yaml"
   },
 ]

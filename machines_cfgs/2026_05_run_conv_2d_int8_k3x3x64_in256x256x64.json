@@ -1,0 +1,8 @@
+[
+    {
+        "killcmd": "sudo pkill -9 -f run_model.py",
+        "exec": "/usr/bin/python3 /home/carol/tpu-rad/run_model.py -m /home/carol/tpu-rad/models/conv_2d_int8_k3x3x64_in256x256x64_edgetpu.tflite -i /home/carol/tpu-rad/inputs/input_for_conv_2d_int8_k3x3x64_in256x256x64_edgetpu.tflite.npy --vit -n 1 --log_interval 1 -g /home/carol/tpu-rad/golden/golden_conv_2d_int8_k3x3x64_in256x256x64_edgetpu.npy",
+        "codename": "conv_2d_int8_k3x3x64_in256x256x64",
+        "header": "conv_2d_int8_k3x3x64_in256x256x64"
+    }
+]
